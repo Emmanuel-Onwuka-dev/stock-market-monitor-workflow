@@ -49,7 +49,7 @@ Checking market movers every morning takes time and pulls focus before the workd
 
 ## Known limitations
 
-- Depends on Yahoo Finance's page structure — if their layout changes significantly, the scrape step may need updating
+- Depends on Yahoo Finance's page structure; if their layout changes significantly, the scrape step may need updating
 - AI classification occasionally returns malformed output; the self-healing loop retries up to 3 times before falling back to an error alert, so failures are surfaced rather than silent
 
 ## License
