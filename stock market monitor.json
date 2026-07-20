@@ -1,0 +1,445 @@
+{
+  "name": "stock market monitor upgrade",
+  "nodes": [
+    {
+      "parameters": {
+        "chatId": "7639067062",
+        "text": "=📊 DAILY STOCK MARKET SUMMARY\n\n✅ UP:\n{{ $json.up }}\n\n🔴 DOWN:\n{{ $json.down }}\n\n⚖️ STABLE:\n{{ $json.stable }}\n\n💡 AI SUGGESTION:\nBased on today's market movement, prioritize stocks in the UP category with strong volume — particularly those showing 52-week growth trends. Avoid averaging down on stocks in the DOWN category until a clear reversal signal appears.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        -96
+      ],
+      "id": "c3b4a5a4-b1c2-407a-98c2-23f9d364c3b1",
+      "name": "Send a text message",
+      "webhookId": "5fdfc690-befc-456b-b42f-cd8fbeba5f1c",
+      "notesInFlow": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "uBy1RaGEooEJUkLR",
+          "name": "Telegram account"
+        }
+      },
+      "notes": "daily market digest"
+    },
+    {
+      "parameters": {
+        "operation": "scrape",
+        "url": "https://finance.yahoo.com/markets/stocks",
+        "requestOptions": {}
+      },
+      "type": "@mendable/n8n-nodes-firecrawl.firecrawl",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -80
+      ],
+      "id": "743e45e5-9a7a-43db-be1c-a2c5497df09d",
+      "name": "scraping the stock market website",
+      "credentials": {
+        "firecrawlApi": {
+          "id": "FszXCYPavyp4lAiZ",
+          "name": "Firecrawl account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a financial market analyst. Below is scraped data from Yahoo Finance markets page.\n\nAnalyze the content and categorize market performance into three sections labeled exactly as shown:\n\nUP:\n- [Stock/Index] — [performance and reason]\n\nDOWN:\n- [Stock/Index] — [performance and reason]\n\nSTABLE:\n- [Stock/Index] — [performance and reason]\n\nHere is the content:\n{{ $json.data.markdown }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -512,
+        -80
+      ],
+      "id": "d9d4286f-03f0-42f9-994e-84f5d8af4415",
+      "name": "classify the scraped stocks into up, down and stable",
+      "notesInFlow": true,
+      "notes": "categorizes the stock market text into up, down, and stable"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.text;\n\nconst upMatch = text.match(/UP:([\\s\\S]*?)DOWN:/);\nconst downMatch = text.match(/DOWN:([\\s\\S]*?)STABLE:/);\nconst stableMatch = text.match(/STABLE:([\\s\\S]*?)$/);\n\nconst clean = (str) => str ? str.replace(/\\*\\*/g, '').replace(/\\\\\\n/g, '\\n').trim() : '';\n\nconst up = clean(upMatch ? upMatch[1] : '');\nconst down = clean(downMatch ? downMatch[1] : '');\nconst stable = clean(stableMatch ? stableMatch[1] : '');\n\nreturn [{ json: { up, down, stable } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        -96
+      ],
+      "id": "173e0655-6853-4a8d-9b5c-1de71503bc98",
+      "name": "standardized the text to make it readable for consumers"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1248,
+        -80
+      ],
+      "id": "68cba10b-fe03-441e-ba20-a9f9d26b2cc5",
+      "name": "daily 7am text trigger"
+    },
+    {
+      "parameters": {
+        "content": "## STOCK MARKET MONITOR\n## This workflow runs automatically every morning at 7am. It scrapes live stock market data from Yahoo Finance using Firecrawl, passes the content to Groq for analysis, and categorizes market performance into three sections; stocks that have gone UP, DOWN, and remain STABLE. A Code node standardizes the AI output into clean readable fields. The final summary is sent directly to Telegram as a daily market digest.",
+        "height": 592,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1344,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "46c28d08-e976-4634-ba7b-9124eaf55f31",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -528,
+        96
+      ],
+      "id": "3a3075b0-87a5-4540-bef3-6934782e1842",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6yG5ELDegbYFiXU1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "",
+        "subject": "ERROR ALERT",
+        "message": "={{ $json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        384
+      ],
+      "id": "0b1c2b98-3698-4cc9-88f2-18a5dc69b935",
+      "name": "ERROR alert message to me",
+      "webhookId": "6ef365b7-be1e-410e-b134-18090227df22",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ELqc97V3xKkIepIX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0636a617-35e8-4047-a4be-4a25a44efb13",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        16,
+        -80
+      ],
+      "id": "c06f21be-5b3e-418a-a120-a7311b2ffa9a",
+      "name": "validates whether key contains value, key:value pair."
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -496,
+        352
+      ],
+      "id": "c7aaf264-22d0-4d5e-911b-c585d42f9305",
+      "name": "Wait",
+      "webhookId": "270bb549-45d3-4d70-8295-f65cccd02592",
+      "notesInFlow": true,
+      "notes": "pauses so as not to overwhelm the API"
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowStaticData = $getWorkflowStaticData('global');\nworkflowStaticData.retryCount = 0;\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -96
+      ],
+      "id": "9cab8faa-e60d-4c9a-a9a4-b31eb962e48d",
+      "name": "Static data reset",
+      "notesInFlow": true,
+      "notes": "The data resets for the next day at count zero, regardless of what happened today."
+    },
+    {
+      "parameters": {
+        "content": "The data resets for the next data from count 0\n"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        576,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "557e8dec-f47b-494b-9faf-03b760b65f1b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Self-healing retry logic using static data (persists across loop iterations)\nconst MAX_RETRIES = 3;\n\nconst workflowStaticData = $getWorkflowStaticData('global');\n\nlet retryCount = workflowStaticData.retryCount ?? 0;\n\nif (retryCount >= MAX_RETRIES) {\n  // Reset counter for next day's run before bailing out\n  workflowStaticData.retryCount = 0;\n\n  return [\n    {\n      json: {\n        status: \"FAILED\",\n        message: `Firecrawl returned empty data after ${MAX_RETRIES} attempts. Manual check needed.`,\n        retryCount,\n        timestamp: new Date().toISOString(),\n      },\n    },\n  ];\n}\n\n// Increment and persist the count\nworkflowStaticData.retryCount = retryCount + 1;\n\nreturn [\n  {\n    json: {\n      retryCount: workflowStaticData.retryCount,\n      status: \"RETRYING\",\n      message: `Attempt ${workflowStaticData.retryCount} of ${MAX_RETRIES} — re-triggering scrape...`,\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        160
+      ],
+      "id": "5b65b72f-252c-48d0-ab95-5a6c737ac52a",
+      "name": "Self healing path node",
+      "notesInFlow": true,
+      "notes": "Creates a loop set for  3 times. If it still fails after the 3rd time, a message is sent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5e428a35-97bd-4630-9c38-7dd206c0f7b6",
+              "leftValue": "={{ $json.retryCount }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "f11966b7-e8c1-4add-a55c-504bf55d8b61",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "RETRYING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        64,
+        368
+      ],
+      "id": "83292d92-6b3d-4ec1-a038-14594c6ea940",
+      "name": "validates whether retry count has been exceeded",
+      "notesInFlow": true,
+      "notes": "validates whether the retry count has been exceeded or not"
+    },
+    {
+      "parameters": {
+        "content": "$getWorkflowStaticData('global') command is essential so that the downstream nodes don't override the count of retries and go back to 0."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        64,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "bfa7fb3b-7d5f-427f-be22-aa36c15738f1",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "scraping the stock market website": {
+      "main": [
+        [
+          {
+            "node": "classify the scraped stocks into up, down and stable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "classify the scraped stocks into up, down and stable": {
+      "main": [
+        [
+          {
+            "node": "validates whether key contains value, key:value pair.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "standardized the text to make it readable for consumers": {
+      "main": [
+        [
+          {
+            "node": "Static data reset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "daily 7am text trigger": {
+      "main": [
+        [
+          {
+            "node": "scraping the stock market website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "classify the scraped stocks into up, down and stable",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validates whether key contains value, key:value pair.": {
+      "main": [
+        [
+          {
+            "node": "standardized the text to make it readable for consumers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Self healing path node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "scraping the stock market website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Static data reset": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Self healing path node": {
+      "main": [
+        [
+          {
+            "node": "validates whether retry count has been exceeded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validates whether retry count has been exceeded": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ERROR alert message to me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bc4739a8-a96f-4269-9a4d-e4ef8c8200c0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e87efae1c50ccaa3fe6b24c7b478b0c958003e76127c57c9b28fb1381f5f2812"
+  },
+  "id": "7XN68zb2aJikbuoO",
+  "tags": []
+}
