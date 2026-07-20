@@ -1,11 +1,15 @@
 # stock-market-monitor-workflow
 # 📈 Stock Market Monitor
 
-An automated daily market digest — scrapes live stock data, classifies it with AI, and delivers a clean summary straight to Telegram every morning. No manual checking required.
+An automated daily market digest: scrapes live stock data, classifies it with AI, and delivers a clean summary straight to Telegram every morning. No manual checking required.
 
 ## Why
 
 Checking market movers every morning takes time and pulls focus before the workday even starts. This workflow replaces that manual scan with an automated 7am digest, so the summary is waiting in Telegram before you need it.
+
+## Workflow diagram
+
+<img width="1701" height="472" alt="stock market monitor" src="https://github.com/user-attachments/assets/9d3129e5-5221-462d-992e-fd8e920d9e45" />
 
 ## How it works
 
@@ -21,19 +25,8 @@ Checking market movers every morning takes time and pulls focus before the workd
 8. **Error handling** — if all 3 retries are exhausted, sends an alert email instead of failing silently
 
 ## Example output
+<img width="1215" height="823" alt="stock market monitor output" src="https://github.com/user-attachments/assets/8b25a265-3e60-4871-ad1e-ef37ca05df1a" />
 
-```
-📊 Daily Market Digest — July 20, 2026
-
-🟢 UP
-AAPL +2.1%, NVDA +3.4%, ...
-
-🔴 DOWN
-TSLA -1.8%, ...
-
-⚪ STABLE
-MSFT +0.1%, ...
-```
 
 ## Stack
 
@@ -58,11 +51,6 @@ MSFT +0.1%, ...
 
 - Depends on Yahoo Finance's page structure — if their layout changes significantly, the scrape step may need updating
 - AI classification occasionally returns malformed output; the self-healing loop retries up to 3 times before falling back to an error alert, so failures are surfaced rather than silent
-
-## Workflow diagram
-
-<img width="1701" height="472" alt="stock market monitor" src="https://github.com/user-attachments/assets/9d3129e5-5221-462d-992e-fd8e920d9e45" />
-
 
 ## License
 
